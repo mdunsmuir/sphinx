@@ -24,22 +24,33 @@ fn main() {
             };
 
             let r_buf: Result<Buffer<u8, Marker>, Error> =
-                Buffer::generic_load(512, 100, |chunk| {
+                Buffer::generic_load_2(512, 100, |mut chunk| {
 
-                match bytes.next() {
-                    None => Ok(None),
+                let mut taken = 0;
+                while let Some(result) = bytes.next() {
+                    match result {
+                        Err(e) => return Err(e),
 
-                    Some(Ok(byte)) => {
-                        chunk.push(byte);
-                        chunk.mark_at(Linebreak, Linebreak)
+                        Ok(byte) => {
+                            chunk.push(byte);
+                            if byte == 10 {
+                                chunk.mark_at(Linebreak, taken);
+                            }
+                        },
+                    }
 
-
-                        Ok(Some((byte, markers)))
-                    },
-
-                    Some(Err(e)) => Err(e),
+                    taken += 1;
+                    if taken >= chunk.capacity() {
+                        break;
+                    }
                 }
-            };
+
+                if taken == 0 {
+                    Ok(None)
+                } else {
+                    Ok(Some(chunk))
+                }
+            });
 
             match r_buf {
                 Ok(buf) => {
