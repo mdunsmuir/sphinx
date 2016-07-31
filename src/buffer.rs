@@ -66,6 +66,18 @@ impl<T: Clone, M: Eq + Hash + Copy> Buffer<T, M> {
         }
     }
 
+    
+    pub fn generic_load_2<F, E>(chunk_size: usize,
+                                history_size: usize,
+                                mut loader: F) -> Result<Self, E>
+        where F: FnMut(Chunk<T, M>) -> Result<Chunk<T, M>, E> {
+
+        match Rope::generic_load_2(chunk_size, loader) {
+            Err(e) => Err(e),
+            Ok(rope) => Ok(Self::new(rope, history_size)),
+        }
+    }
+
     pub fn generic_load<F, E>(mut next: F,
                               chunk_size: usize,
                               history_size: usize) -> Result<Self, E>

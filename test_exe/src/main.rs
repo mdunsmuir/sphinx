@@ -23,24 +23,23 @@ fn main() {
                 Ok(mut f) => { f.bytes() },
             };
 
-            let r_buf: Result<Buffer<u8, Marker>, Error> = Buffer::generic_load(|| {
+            let r_buf: Result<Buffer<u8, Marker>, Error> =
+                Buffer::generic_load(512, 100, |chunk| {
+
                 match bytes.next() {
                     None => Ok(None),
 
                     Some(Ok(byte)) => {
-                        let markers = if byte == 10 {
-                            let mut set = HashSet::new();
-                            set.insert(Linebreak);
-                            Some(set)
-                        } else {
-                            None
-                        };
+                        chunk.push(byte);
+                        chunk.mark_at(Linebreak, Linebreak)
+
 
                         Ok(Some((byte, markers)))
                     },
+
                     Some(Err(e)) => Err(e),
                 }
-            }, 512, 100);
+            };
 
             match r_buf {
                 Ok(buf) => {
