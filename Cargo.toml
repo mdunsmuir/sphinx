@@ -1,0 +1,7 @@
+[package]
+name = "sphinx"
+version = "0.1.0"
+authors = ["Michael Dunsmuir <mjdunsmuir@gmail.com>"]
+
+[dependencies]
+persistent_rope = { path = "../persistent_rope" }
