@@ -3,10 +3,10 @@ extern crate sphinx;
 use std::env::args;
 use std::fs::File;
 use std::io::Read;
-use std::io::Write;
+//use std::io::Write;
 use std::io::Error;
-use std::collections::HashSet;
-use std::io::stdout;
+//use std::collections::HashSet;
+//use std::io::stdout;
 
 use sphinx::buffer::*;
 
@@ -20,23 +20,25 @@ fn main() {
         Some(file_name) => {
             let mut bytes = match File::open(file_name) {
                 err@Err(_) => panic!("{:?}", err),
-                Ok(mut f) => { f.bytes() },
+
+                Ok(mut f) => { 
+                    let mut data = Vec::new();
+                    match f.read_to_end(&mut data) {
+                        Ok(_) => (),
+                        Err(e) => panic!("{:?}", e),
+                    }
+                    data.into_iter()
+                },
             };
 
-            let r_buf: Result<Buffer<u8, Marker>, Error> =
-                Buffer::generic_load_2(512, 100, |mut chunk| {
+            let r_buf: Result<Buffer<u8, Marker>, ()> =
+                Buffer::generic_load(512, 100, |mut chunk| {
 
                 let mut taken = 0;
-                while let Some(result) = bytes.next() {
-                    match result {
-                        Err(e) => return Err(e),
-
-                        Ok(byte) => {
-                            chunk.push(byte);
-                            if byte == 10 {
-                                chunk.mark_at(Linebreak, taken);
-                            }
-                        },
+                while let Some(byte) = bytes.next() {
+                    chunk.push(byte);
+                    if byte == 10 {
+                        chunk.mark_at(Linebreak, taken);
                     }
 
                     taken += 1;

@@ -67,23 +67,12 @@ impl<T: Clone, M: Eq + Hash + Copy> Buffer<T, M> {
     }
 
     
-    pub fn generic_load_2<F, E>(chunk_size: usize,
+    pub fn generic_load<F, E>(chunk_size: usize,
                                 history_size: usize,
                                 mut loader: F) -> Result<Self, E>
         where F: FnMut(Chunk<T, M>) -> Result<Option<Chunk<T, M>>, E> {
 
-        match Rope::generic_load_2(chunk_size, loader) {
-            Err(e) => Err(e),
-            Ok(rope) => Ok(Self::new(rope, history_size)),
-        }
-    }
-
-    pub fn generic_load<F, E>(mut next: F,
-                              chunk_size: usize,
-                              history_size: usize) -> Result<Self, E>
-        where F: FnMut() -> Result<Option<(T, Option<HashSet<M>>)>, E> {
-
-        match Rope::generic_load(next, chunk_size) {
+        match Rope::generic_load(chunk_size, loader) {
             Err(e) => Err(e),
             Ok(rope) => Ok(Self::new(rope, history_size)),
         }
