@@ -1,8 +1,15 @@
+//! An implementation of a text editing buffer, Uses `persistent_rope` to
+//! store the actual data, and adds functionality related to loading,
+//! saving, querying, and editing.
+
 use std::collections::VecDeque;
 use std::collections::HashSet;
 use std::hash::Hash;
 
-use persistent_rope::*;
+use persistent_rope::{Rope, Values};
+pub use persistent_rope::Chunk;
+
+const default_history_size: usize = 1;
 
 struct History<T, M> {
     buffers: VecDeque<Rope<T, M>>,
@@ -50,31 +57,27 @@ impl<T, M> History<T, M> {
 
 impl<T: Clone, M: Eq + Hash + Copy> Buffer<T, M> {
 
-    pub fn new(initial: Rope<T, M>, history_size: usize) -> Self {
-        if history_size < 1 {
-            panic!("history size must be at least 1");
-        }
-
+    pub fn new(initial: Rope<T, M>) -> Self {
         let mut history = VecDeque::new();
         history.push_front(initial);
 
         Buffer {
             history: History {
                 buffers: history,
-                size: history_size,
+                size: default_history_size,
             }
         }
     }
 
-    
-    pub fn generic_load<F, E>(chunk_size: usize,
-                                history_size: usize,
-                                mut loader: F) -> Result<Self, E>
-        where F: FnMut(Chunk<T, M>) -> Result<Option<Chunk<T, M>>, E> {
+    /// Since `Buffer` uses `persistent_rope` to store data, we must consider
+    /// the nature of the rope data structure if we want to be as efficient as
+    /// possible. See `Rope::from_chunks` for details on how to use this.
+    pub fn from_chunks<F, E>(mut loader: F) -> Result<Self, E>
+        where F: FnMut() -> Result<Option<Chunk<T, M>>, E> {
 
-        match Rope::generic_load(chunk_size, loader) {
+        match Rope::from_chunks(loader) {
             Err(e) => Err(e),
-            Ok(rope) => Ok(Self::new(rope, history_size)),
+            Ok(rope) => Ok(Self::new(rope)),
         }
     }
 

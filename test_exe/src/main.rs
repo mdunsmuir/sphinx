@@ -32,9 +32,11 @@ fn main() {
             };
 
             let r_buf: Result<Buffer<u8, Marker>, ()> =
-                Buffer::generic_load(512, 100, |mut chunk| {
+                Buffer::from_chunks(|| {
 
+                let mut chunk = Chunk::with_capacity(512);
                 let mut taken = 0;
+
                 while let Some(byte) = bytes.next() {
                     chunk.push(byte);
                     if byte == 10 {
@@ -42,7 +44,7 @@ fn main() {
                     }
 
                     taken += 1;
-                    if taken >= chunk.capacity() {
+                    if taken >= 512 {
                         break;
                     }
                 }
