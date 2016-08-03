@@ -3,13 +3,15 @@
 //! saving, querying, and editing.
 
 use std::collections::VecDeque;
-use std::collections::HashSet;
 use std::hash::Hash;
+use std::io;
+use std::io::Read;
 
 use persistent_rope::{Rope, Values};
 pub use persistent_rope::Chunk;
 
-const default_history_size: usize = 1;
+const DEFAULT_HISTORY_SIZE: usize = 1;
+const CHUNK_SIZE: usize = 512;
 
 struct History<T, M> {
     buffers: VecDeque<Rope<T, M>>,
@@ -64,7 +66,7 @@ impl<T: Clone, M: Eq + Hash + Copy> Buffer<T, M> {
         Buffer {
             history: History {
                 buffers: history,
-                size: default_history_size,
+                size: DEFAULT_HISTORY_SIZE,
             }
         }
     }
@@ -101,6 +103,35 @@ impl<T: Clone, M: Eq + Hash + Copy> Buffer<T, M> {
         self.history.write(operation);
     }
 
+}
+
+impl Buffer<u8, Marker> {
+
+    pub fn from_bytes<R: Read>(mut bytes: R) -> io::Result<Self> {
+        let mut buffer: [u8; CHUNK_SIZE] = [0; CHUNK_SIZE];
+
+        Buffer::from_chunks(|| {
+            let result = bytes.read(&mut buffer);
+                
+            match result {
+                Err(e) => Err(e),
+                Ok(0) => Ok(None),
+
+                Ok(bytes_read) => {
+                    let mut chunk = Chunk::with_capacity(CHUNK_SIZE);
+                    chunk.extend_from_slice(&buffer[0..bytes_read]);
+                    
+                    for (i, &byte) in buffer[0..bytes_read].iter().enumerate() {
+                        if byte == 10 {
+                            chunk.mark_at(Linebreak, i);
+                        }
+                    }
+
+                    Ok(Some(chunk))
+                }
+            }
+        })
+    }
 }
 
 impl<'a, T: Clone, M: Eq + Hash + Copy> IntoIterator for &'a Buffer<T, M> {
