@@ -1,0 +1,8 @@
+[package]
+name = "rachel"
+version = "0.1.0"
+authors = ["Michael Dunsmuir <mjdunsmuir@gmail.com>"]
+
+[dependencies]
+sphinx = { path = "../" }
+sphinx_rustbox = { path = "../sphinx_rustbox" }

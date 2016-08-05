@@ -6,6 +6,7 @@ use std::collections::VecDeque;
 use std::hash::Hash;
 use std::io;
 use std::io::Read;
+use std::path::PathBuf;
 
 use persistent_rope::{Rope, Values};
 pub use persistent_rope::Chunk;
@@ -19,6 +20,7 @@ struct History<T, M> {
 }
 
 pub struct Buffer<T, M> {
+    file_name: Option<PathBuf>,
     history: History<T, M>,
 }
 
@@ -28,6 +30,10 @@ pub enum Marker {
 }
 
 pub use self::Marker::*;
+
+pub trait GetLine {
+    fn get_line(&self, line: usize) -> Option<Box<String>>;
+}
 
 impl<T, M> History<T, M> {
 
@@ -64,6 +70,7 @@ impl<T: Clone, M: Eq + Hash + Copy> Buffer<T, M> {
         history.push_front(initial);
 
         Buffer {
+            file_name: None,
             history: History {
                 buffers: history,
                 size: DEFAULT_HISTORY_SIZE,
@@ -103,6 +110,19 @@ impl<T: Clone, M: Eq + Hash + Copy> Buffer<T, M> {
         self.history.write(operation);
     }
 
+}
+
+/*
+pub trait GetLine {
+    fn get_line(&self, line: usize) -> Option<Box<String>>;
+}
+*/
+
+impl GetLine for Buffer<u8, Marker> {
+
+    fn get_line(&self, line: usize) -> Option<Box<String>> {
+        unimplemented!()
+    }
 }
 
 impl Buffer<u8, Marker> {
